@@ -1,0 +1,16 @@
+sources:
+  - id: ibm_careers
+    name: IBM Careers
+    type: static
+    country: Germany
+    url: https://careers.ibm.com/jobs
+    selectors:
+      job_card: ".job-card"
+      title: ".job-title"
+      location: ".job-location"
+      link: "a"
+    pagination:
+      type: page
+      param: page
+      start: 1
+      max_pages: 2
