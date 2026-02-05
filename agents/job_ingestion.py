@@ -4,6 +4,8 @@ from pathlib import Path
 
 from ingestion.static import StaticIngestionStrategy
 from ingestion.dynamic.playwright import PlaywrightIngestionStrategy
+from utils.job_normalizer import normalize_job
+from utils.job_store import load_jobs, save_jobs, upsert_jobs
 
 CONFIG_PATH = Path("config/sources.yaml")
 
@@ -80,14 +82,22 @@ def ingest_source(source: dict) -> list[dict]:
 
 def run_ingestion():
     sources = load_sources()
-    all_jobs = []
+
+    existing_jobs = load_jobs()
+    normalized_jobs = []
 
     for source in sources:
         try:
-            jobs = ingest_source(source)
-            all_jobs.extend(jobs)
+            raw_jobs = ingest_source(source)
+            for raw_job in raw_jobs:
+                normalized_jobs.append(normalize_job(raw_job))
         except Exception as e:
             source_id = source.get("id", source.get("name", "unknown"))
             print(f"[{source_id}] ❌ Failed: {e}")
 
-    return all_jobs
+    updated_jobs = upsert_jobs(existing_jobs, normalized_jobs)
+    save_jobs(updated_jobs)
+
+    print(f"\n💾 Stored {len(updated_jobs)} total jobs locally")
+
+    return normalized_jobs
