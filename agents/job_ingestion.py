@@ -7,9 +7,11 @@ CONFIG_PATH = Path("config/sources.yaml")
 
 
 def load_sources():
+    print(f"📄 Loading sources from: {CONFIG_PATH.resolve()}")
     with open(CONFIG_PATH, "r") as f:
         data = yaml.safe_load(f)
     return data.get("sources", [])
+
 
 
 def fetch_html(url: str) -> str:

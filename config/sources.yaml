@@ -1,18 +1,5 @@
-sources:
-  - id: ibm_careers
-    name: IBM Careers
-    type: dynamic
-    country: Germany
-    url: https://careers.ibm.com
-    note: "Requires Playwright (JS-heavy)"
-
-  - id: airbnb_careers
-    name: Airbnb Careers
-    type: static
-    country: Global
-    url: https://careers.airbnb.com/positions/
-    selectors:
-      job_card: "article"
-      title: "h3 a"
-      location: ".location"
-      link: "h3 a"
+- id: stripe_greenhouse
+  name: Stripe Careers
+  type: dynamic
+  url: https://boards.greenhouse.io/embed/job_board?for=stripe
+  note: "Jobs rendered via JS – requires Playwright"
