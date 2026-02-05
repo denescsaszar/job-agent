@@ -10,8 +10,7 @@ def load_sources():
     print(f"📄 Loading sources from: {CONFIG_PATH.resolve()}")
     with open(CONFIG_PATH, "r") as f:
         data = yaml.safe_load(f)
-    return data.get("sources", [])
-
+    return data
 
 
 def fetch_html(url: str) -> str:
@@ -21,11 +20,18 @@ def fetch_html(url: str) -> str:
 
 
 def ingest_source(source: dict) -> list[dict]:
-    if "selectors" not in source:
-        print(f"[{source['id']}] ⏭ Skipped (no selectors defined)")
+    source_id = source.get("id", source.get("name", "unknown"))
+    mode = source.get("ingestion", {}).get("mode", "static")
+
+    if mode == "dynamic":
+        print(f"[{source_id}] ⏭ Skipped (dynamic source – Playwright pending)")
         return []
 
-    print(f"\n[{source['id']}] Fetching jobs from {source['name']}")
+    if "selectors" not in source:
+        print(f"[{source_id}] ⏭ Skipped (no selectors defined)")
+        return []
+
+    print(f"\n[{source_id}] Fetching jobs from {source['name']}")
 
     html = fetch_html(source["url"])
     soup = BeautifulSoup(html, "html.parser")
@@ -33,10 +39,10 @@ def ingest_source(source: dict) -> list[dict]:
     cards = soup.select(source["selectors"]["job_card"])
 
     if not cards:
-        print(f"[{source['id']}] 🔍 No job cards found. Printing page sample:")
+        print(f"[{source_id}] 🔍 No job cards found. Printing page sample:")
         print(soup.prettify()[:2000])
 
-    print(f"[{source['id']}] Found {len(cards)} job cards")
+    print(f"[{source_id}] Found {len(cards)} job cards")
 
     jobs = []
 
@@ -71,6 +77,7 @@ def run_ingestion():
             jobs = ingest_source(source)
             all_jobs.extend(jobs)
         except Exception as e:
-            print(f"[{source['id']}] ❌ Failed: {e}")
+            source_id = source.get("id", source.get("name", "unknown"))
+            print(f"[{source_id}] ❌ Failed: {e}")
 
     return all_jobs

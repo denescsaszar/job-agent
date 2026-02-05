@@ -1,0 +1,7 @@
+mode = source.get("ingestion", {}).get("mode", "static")
+
+if mode == "static":
+    html = static_ingestor.fetch(source)
+elif mode == "dynamic":
+    print(f"[{source['id']}] ⏭ Dynamic source (not yet implemented)")
+    return []
