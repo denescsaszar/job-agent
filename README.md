@@ -171,3 +171,17 @@ Built as a real-world automation and product-thinking exercise to improve the jo
 │ Supervisor │
 │ / Evaluator │
 └─────────────┘
+
+## Ingestion Architecture
+
+This project intentionally separates job ingestion into:
+
+- Static ingestion (requests + BeautifulSoup)
+- Dynamic ingestion (Playwright)
+
+This decision is based on real-world testing of modern career pages
+(Stripe, Airbnb, IBM), which render job listings via JavaScript.
+
+See:
+
+- docs/decisions/ingestion_static_vs_dynamic.md
