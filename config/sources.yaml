@@ -1,7 +1,9 @@
 - name: stripe
   url: https://stripe.com/jobs
   ingestion:
-    mode: dynamic # static | dynamic
+    mode: dynamic
     engine: playwright
   selectors:
-    job_card: ".job"
+    job_container: "a[href*='/jobs/']"
+    title: "h3"
+    link: ":scope"

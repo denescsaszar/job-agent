@@ -36,8 +36,13 @@ def ingest_source(source: dict) -> list[dict]:
 
     soup = BeautifulSoup(html, "html.parser")
 
-    cards = soup.select(source["selectors"]["job_container"])
+    # 🔒 SAFE ACCESS TO job_container
+    job_container = source["selectors"].get("job_container")
+    if not job_container:
+        print(f"[{source_id}] ⏭ Skipped (no job_container selector)")
+        return []
 
+    cards = soup.select(job_container)
 
     if not cards:
         print(f"[{source_id}] 🔍 No job cards found. Printing page sample:")
@@ -48,9 +53,13 @@ def ingest_source(source: dict) -> list[dict]:
     jobs = []
 
     for card in cards:
-        title_el = card.select_one(source["selectors"]["title"])
-        link_el = card.select_one(source["selectors"]["link"])
-        location_el = card.select_one(source["selectors"].get("location"))
+        title_selector = source["selectors"].get("title")
+        link_selector = source["selectors"].get("link")
+        location_selector = source["selectors"].get("location")
+
+        title_el = card.select_one(title_selector) if title_selector else None
+        link_el = card.select_one(link_selector) if link_selector else None
+        location_el = card.select_one(location_selector) if location_selector else None
 
         if not title_el or not link_el:
             continue

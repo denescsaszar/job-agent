@@ -8,7 +8,8 @@ class PlaywrightIngestionStrategy(IngestionStrategy):
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 
-            page.goto(source["url"], timeout=30000)
+            page.goto(source["url"], wait_until="networkidle", timeout=30000)
+
 
             # Optional: deterministic wait from config (later)
             wait_for = source.get("ingestion", {}).get("wait_for")
