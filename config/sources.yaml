@@ -2,8 +2,5 @@
   url: https://stripe.com/jobs
   ingestion:
     mode: dynamic
-    engine: playwright
-  selectors:
-    job_container: "a[href^='/jobs/listing/']"
-    title: "h3"
-    link: ":scope"
+    strategy: client_state_json
+    extractor: extract_stripe_jobs

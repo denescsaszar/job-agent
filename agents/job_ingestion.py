@@ -4,6 +4,8 @@ from pathlib import Path
 
 from ingestion.static import StaticIngestionStrategy
 from ingestion.dynamic.playwright import PlaywrightIngestionStrategy
+from ingestion.dynamic.client_state_json import ClientStateJsonIngestionStrategy
+
 from utils.job_normalizer import normalize_job
 from utils.job_store import load_jobs, save_jobs, upsert_jobs
 
@@ -11,6 +13,7 @@ CONFIG_PATH = Path("config/sources.yaml")
 
 static_ingestor = StaticIngestionStrategy()
 dynamic_ingestor = PlaywrightIngestionStrategy()
+client_state_ingestor = ClientStateJsonIngestionStrategy()
 
 
 def load_sources():
@@ -22,15 +25,23 @@ def load_sources():
 
 def ingest_source(source: dict) -> list[dict]:
     source_id = source.get("id", source.get("name", "unknown"))
-    mode = source.get("ingestion", {}).get("mode", "static")
+    ingestion_cfg = source.get("ingestion", {})
+    mode = ingestion_cfg.get("mode", "static")
+    strategy = ingestion_cfg.get("strategy")
 
+    print(f"\n[{source_id}] Fetching jobs from {source['name']} ({mode})")
+
+    # 🔑 CLIENT-SIDE JSON INGESTION (Stripe-style)
+    if mode == "dynamic" and strategy == "client_state_json":
+        raw_jobs = client_state_ingestor.fetch(source)
+        print(f"[{source_id}] Found {len(raw_jobs)} jobs via client-state JSON")
+        return raw_jobs
+
+    # 🔑 HTML-BASED INGESTION (static or dynamic DOM)
     if "selectors" not in source:
         print(f"[{source_id}] ⏭ Skipped (no selectors defined)")
         return []
 
-    print(f"\n[{source_id}] Fetching jobs from {source['name']} ({mode})")
-
-    # 🔑 SELECT INGESTION STRATEGY
     if mode == "dynamic":
         html = dynamic_ingestor.fetch(source)
     else:
@@ -38,7 +49,6 @@ def ingest_source(source: dict) -> list[dict]:
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # 🔒 SAFE ACCESS TO job_container
     job_container = source["selectors"].get("job_container")
     if not job_container:
         print(f"[{source_id}] ⏭ Skipped (no job_container selector)")
@@ -47,8 +57,8 @@ def ingest_source(source: dict) -> list[dict]:
     cards = soup.select(job_container)
 
     if not cards:
-        print(f"[{source_id}] 🔍 No job cards found. Printing page sample:")
-        print(soup.prettify()[:2000])
+        print(f"[{source_id}] 🔍 No job cards found")
+        return []
 
     print(f"[{source_id}] Found {len(cards)} job cards")
 
@@ -66,16 +76,14 @@ def ingest_source(source: dict) -> list[dict]:
         if not title_el or not link_el:
             continue
 
-        job = {
+        jobs.append({
             "position": title_el.get_text(strip=True),
             "company": source["name"].replace(" Careers", ""),
             "place": location_el.get_text(strip=True) if location_el else None,
             "country": source.get("country"),
             "posting_url": link_el.get("href"),
             "source": source["name"],
-        }
-
-        jobs.append(job)
+        })
 
     return jobs
 
