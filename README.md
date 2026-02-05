@@ -185,3 +185,14 @@ This decision is based on real-world testing of modern career pages
 See:
 
 - docs/decisions/ingestion_static_vs_dynamic.md
+
+## Setup (Dynamic Ingestion)
+
+For JavaScript-rendered job boards, this project uses Playwright.
+
+After installing Python dependencies:
+
+```bash
+pip install -r requirements.txt
+python -m playwright install
+```
