@@ -2,6 +2,9 @@ import yaml
 import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
+from ingestion.static import StaticIngestionStrategy
+
+static_ingestor = StaticIngestionStrategy()
 
 CONFIG_PATH = Path("config/sources.yaml")
 
@@ -33,7 +36,7 @@ def ingest_source(source: dict) -> list[dict]:
 
     print(f"\n[{source_id}] Fetching jobs from {source['name']}")
 
-    html = fetch_html(source["url"])
+    html = static_ingestor.fetch(source)
     soup = BeautifulSoup(html, "html.parser")
 
     cards = soup.select(source["selectors"]["job_card"])
