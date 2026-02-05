@@ -5,22 +5,25 @@ from pathlib import Path
 from ingestion.static import StaticIngestionStrategy
 from ingestion.dynamic.playwright import PlaywrightIngestionStrategy
 from ingestion.dynamic.client_state_json import ClientStateJsonIngestionStrategy
+from ingestion.dynamic.network_json import NetworkJsonIngestionStrategy
 
 from utils.job_normalizer import normalize_job
 from utils.job_store import load_jobs, save_jobs, upsert_jobs
 
+
 CONFIG_PATH = Path("config/sources.yaml")
 
+# Ingestion strategies
 static_ingestor = StaticIngestionStrategy()
-dynamic_ingestor = PlaywrightIngestionStrategy()
+dynamic_dom_ingestor = PlaywrightIngestionStrategy()
 client_state_ingestor = ClientStateJsonIngestionStrategy()
+network_json_ingestor = NetworkJsonIngestionStrategy()
 
 
 def load_sources():
     print(f"📄 Loading sources from: {CONFIG_PATH.resolve()}")
     with open(CONFIG_PATH, "r") as f:
-        data = yaml.safe_load(f)
-    return data
+        return yaml.safe_load(f)
 
 
 def ingest_source(source: dict) -> list[dict]:
@@ -31,62 +34,37 @@ def ingest_source(source: dict) -> list[dict]:
 
     print(f"\n[{source_id}] Fetching jobs from {source['name']} ({mode})")
 
-    # 🔑 CLIENT-SIDE JSON INGESTION (Stripe-style)
+    # ------------------------------------------------------------------
+    # NETWORK JSON INGESTION (Stripe-style: jobs via API / XHR)
+    # ------------------------------------------------------------------
+    if mode == "dynamic" and strategy == "network_json":
+        raw_jobs = network_json_ingestor.fetch(source)
+        print(f"[{source_id}] Found {len(raw_jobs)} jobs via network JSON")
+        return raw_jobs
+
+    # ------------------------------------------------------------------
+    # CLIENT-SIDE JSON STATE INGESTION (Next.js / Nuxt / Apollo)
+    # ------------------------------------------------------------------
     if mode == "dynamic" and strategy == "client_state_json":
         raw_jobs = client_state_ingestor.fetch(source)
         print(f"[{source_id}] Found {len(raw_jobs)} jobs via client-state JSON")
         return raw_jobs
 
-    # 🔑 HTML-BASED INGESTION (static or dynamic DOM)
+    # ------------------------------------------------------------------
+    # HTML-BASED INGESTION (static or JS-rendered DOM)
+    # ------------------------------------------------------------------
     if "selectors" not in source:
         print(f"[{source_id}] ⏭ Skipped (no selectors defined)")
         return []
 
     if mode == "dynamic":
-        html = dynamic_ingestor.fetch(source)
+        html = dynamic_dom_ingestor.fetch(source)
     else:
         html = static_ingestor.fetch(source)
 
     soup = BeautifulSoup(html, "html.parser")
 
     job_container = source["selectors"].get("job_container")
-    if not job_container:
-        print(f"[{source_id}] ⏭ Skipped (no job_container selector)")
-        return []
-
-    cards = soup.select(job_container)
-
-    if not cards:
-        print(f"[{source_id}] 🔍 No job cards found")
-        return []
-
-    print(f"[{source_id}] Found {len(cards)} job cards")
-
-    jobs = []
-
-    for card in cards:
-        title_selector = source["selectors"].get("title")
-        link_selector = source["selectors"].get("link")
-        location_selector = source["selectors"].get("location")
-
-        title_el = card.select_one(title_selector) if title_selector else None
-        link_el = card.select_one(link_selector) if link_selector else None
-        location_el = card.select_one(location_selector) if location_selector else None
-
-        if not title_el or not link_el:
-            continue
-
-        jobs.append({
-            "position": title_el.get_text(strip=True),
-            "company": source["name"].replace(" Careers", ""),
-            "place": location_el.get_text(strip=True) if location_el else None,
-            "country": source.get("country"),
-            "posting_url": link_el.get("href"),
-            "source": source["name"],
-        })
-
-    return jobs
-
 
 def run_ingestion():
     sources = load_sources()

@@ -2,5 +2,6 @@
   url: https://stripe.com/jobs
   ingestion:
     mode: dynamic
-    strategy: client_state_json
-    extractor: extract_stripe_jobs
+    strategy: network_json
+    response_url_contains: "jobs"
+    extractor: extract_stripe_jobs_from_api
