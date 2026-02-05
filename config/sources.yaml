@@ -1,16 +1,18 @@
 sources:
   - id: ibm_careers
     name: IBM Careers
+    type: dynamic
+    country: Germany
+    url: https://careers.ibm.com
+    note: "Requires Playwright (JS-heavy)"
+
+  - id: example_greenhouse
+    name: Airbnb (Greenhouse)
     type: static
     country: Germany
-    url: https://careers.ibm.com/jobs
+    url: https://boards.greenhouse.io/airbnb
     selectors:
-      job_card: ".job-card"
-      title: ".job-title"
-      location: ".job-location"
+      job_card: "div.opening"
+      title: "a"
+      location: "span.location, span.location.inline"
       link: "a"
-    pagination:
-      type: page
-      param: page
-      start: 1
-      max_pages: 2
