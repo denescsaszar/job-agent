@@ -3,7 +3,6 @@ import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
 
-
 CONFIG_PATH = Path("config/sources.yaml")
 
 
@@ -20,12 +19,21 @@ def fetch_html(url: str) -> str:
 
 
 def ingest_source(source: dict) -> list[dict]:
+    if "selectors" not in source:
+        print(f"[{source['id']}] ⏭ Skipped (no selectors defined)")
+        return []
+
     print(f"\n[{source['id']}] Fetching jobs from {source['name']}")
 
     html = fetch_html(source["url"])
     soup = BeautifulSoup(html, "html.parser")
 
     cards = soup.select(source["selectors"]["job_card"])
+
+    if not cards:
+        print(f"[{source['id']}] 🔍 No job cards found. Printing page sample:")
+        print(soup.prettify()[:2000])
+
     print(f"[{source['id']}] Found {len(cards)} job cards")
 
     jobs = []
