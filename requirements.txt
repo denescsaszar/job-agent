@@ -1,2 +1,5 @@
 notion-client
 python-dotenv
+pyyaml
+beautifulsoup4
+requests
