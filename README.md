@@ -69,6 +69,37 @@ All applications are tracked in a structured Notion database, including:
 
 This ensures full transparency and fast recall during interviews.
 
+## 📋 Notion Database Schema (Private)
+
+The Notion database acts as the private backend for this system.
+Actual application data is not public, but the schema is documented below.
+
+**Core fields**
+
+- Company
+- Role
+- Country
+- Location / Remote
+- Job URL
+- Source
+- Status
+
+**Analysis & optimization**
+
+- Industry
+- Keywords
+- Required skills
+- Required years of experience
+- Fit score
+
+**Documents**
+
+- CV version (PDF)
+- Cover letter (PDF)
+- Google Docs source link
+
+This structure enables full traceability of every application while keeping personal data private.
+
 ---
 
 ## 🚀 Current status
