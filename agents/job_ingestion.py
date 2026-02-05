@@ -1,12 +1,14 @@
 import yaml
-import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
-from ingestion.static import StaticIngestionStrategy
 
-static_ingestor = StaticIngestionStrategy()
+from ingestion.static import StaticIngestionStrategy
+from ingestion.dynamic.playwright import PlaywrightIngestionStrategy
 
 CONFIG_PATH = Path("config/sources.yaml")
+
+static_ingestor = StaticIngestionStrategy()
+dynamic_ingestor = PlaywrightIngestionStrategy()
 
 
 def load_sources():
@@ -16,30 +18,26 @@ def load_sources():
     return data
 
 
-def fetch_html(url: str) -> str:
-    response = requests.get(url, timeout=15)
-    response.raise_for_status()
-    return response.text
-
-
 def ingest_source(source: dict) -> list[dict]:
     source_id = source.get("id", source.get("name", "unknown"))
     mode = source.get("ingestion", {}).get("mode", "static")
-
-    if mode == "dynamic":
-        print(f"[{source_id}] ⏭ Skipped (dynamic source – Playwright pending)")
-        return []
 
     if "selectors" not in source:
         print(f"[{source_id}] ⏭ Skipped (no selectors defined)")
         return []
 
-    print(f"\n[{source_id}] Fetching jobs from {source['name']}")
+    print(f"\n[{source_id}] Fetching jobs from {source['name']} ({mode})")
 
-    html = static_ingestor.fetch(source)
+    # 🔑 SELECT INGESTION STRATEGY
+    if mode == "dynamic":
+        html = dynamic_ingestor.fetch(source)
+    else:
+        html = static_ingestor.fetch(source)
+
     soup = BeautifulSoup(html, "html.parser")
 
-    cards = soup.select(source["selectors"]["job_card"])
+    cards = soup.select(source["selectors"]["job_container"])
+
 
     if not cards:
         print(f"[{source_id}] 🔍 No job cards found. Printing page sample:")
@@ -52,7 +50,7 @@ def ingest_source(source: dict) -> list[dict]:
     for card in cards:
         title_el = card.select_one(source["selectors"]["title"])
         link_el = card.select_one(source["selectors"]["link"])
-        location_el = card.select_one(source["selectors"]["location"])
+        location_el = card.select_one(source["selectors"].get("location"))
 
         if not title_el or not link_el:
             continue

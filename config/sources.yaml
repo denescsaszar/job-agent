@@ -4,4 +4,4 @@
     mode: dynamic # static | dynamic
     engine: playwright
   selectors:
-    job_container: ".job"
+    job_card: ".job"
