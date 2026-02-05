@@ -4,6 +4,6 @@
     mode: dynamic
     engine: playwright
   selectors:
-    job_container: "a[href*='/jobs/']"
+    job_container: "a[href^='/jobs/listing/']"
     title: "h3"
     link: ":scope"
