@@ -1,7 +1,5 @@
 - name: stripe
-  url: https://stripe.com/jobs
+  url: https://stripe.com/jobs/search
   ingestion:
     mode: dynamic
     strategy: network_json
-    response_url_contains: "jobs"
-    extractor: extract_stripe_jobs_from_api

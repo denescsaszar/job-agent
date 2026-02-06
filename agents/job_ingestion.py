@@ -30,41 +30,53 @@ def ingest_source(source: dict) -> list[dict]:
     source_id = source.get("id", source.get("name", "unknown"))
     ingestion_cfg = source.get("ingestion", {})
     mode = ingestion_cfg.get("mode", "static")
-    strategy = ingestion_cfg.get("strategy")
+    strategy = ingestion_cfg.get("strategy", "dom")
 
-    print(f"\n[{source_id}] Fetching jobs from {source['name']} ({mode})")
+    print(f"\n[{source_id}] Fetching jobs from {source['name']} ({mode}/{strategy})")
 
-    # ------------------------------------------------------------------
-    # NETWORK JSON INGESTION (Stripe-style: jobs via API / XHR)
-    # ------------------------------------------------------------------
-    if mode == "dynamic" and strategy == "network_json":
+    # ------------------------------------------------------------
+    # FETCH HTML OR JSON
+    # ------------------------------------------------------------
+    if mode == "dynamic" and strategy == "dom":
+        html = dynamic_dom_ingestor.fetch(source)
+
+    elif mode == "dynamic" and strategy == "network_json":
         raw_jobs = network_json_ingestor.fetch(source)
         print(f"[{source_id}] Found {len(raw_jobs)} jobs via network JSON")
         return raw_jobs
 
-    # ------------------------------------------------------------------
-    # CLIENT-SIDE JSON STATE INGESTION (Next.js / Nuxt / Apollo)
-    # ------------------------------------------------------------------
-    if mode == "dynamic" and strategy == "client_state_json":
+    elif mode == "dynamic" and strategy == "client_state_json":
         raw_jobs = client_state_ingestor.fetch(source)
         print(f"[{source_id}] Found {len(raw_jobs)} jobs via client-state JSON")
         return raw_jobs
 
-    # ------------------------------------------------------------------
-    # HTML-BASED INGESTION (static or JS-rendered DOM)
-    # ------------------------------------------------------------------
+    else:
+        html = static_ingestor.fetch(source)
+
+    # ------------------------------------------------------------
+    # HTML PARSING (INSPECTION MODE)
+    # ------------------------------------------------------------
     if "selectors" not in source:
         print(f"[{source_id}] ⏭ Skipped (no selectors defined)")
         return []
 
-    if mode == "dynamic":
-        html = dynamic_dom_ingestor.fetch(source)
-    else:
-        html = static_ingestor.fetch(source)
-
     soup = BeautifulSoup(html, "html.parser")
 
-    job_container = source["selectors"].get("job_container")
+    job_container = source["selectors"].get("job_container", "div")
+    cards = soup.select(job_container)
+
+    print(f"[{source_id}] Found {len(cards)} elements for selector '{job_container}'")
+
+    # ------------------------------------------------------------
+    # TEMP: DIAGNOSTIC OUTPUT (FIRST 5 ELEMENTS)
+    # ------------------------------------------------------------
+    for c in cards[:5]:
+        print("----")
+        print(c.prettify()[:800])
+
+    # ⚠️ We are not extracting jobs yet
+    return []
+
 
 def run_ingestion():
     sources = load_sources()
