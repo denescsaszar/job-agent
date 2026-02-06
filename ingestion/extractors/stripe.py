@@ -1,19 +1,14 @@
 def extract_stripe_jobs(data: dict) -> list[dict]:
     jobs = []
 
-    try:
-        job_nodes = data["props"]["pageProps"].get("jobs", [])
-    except Exception:
-        print("[stripe] ❌ Unexpected JSON structure")
-        return []
-
-    for job in job_nodes:
+    # Stripe structure: data["jobs"] is a list of roles
+    for job in data.get("jobs", []):
         jobs.append({
-            "position": job.get("title"),
-            "company": "Stripe",
-            "place": job.get("location"),
-            "posting_url": f"https://stripe.com/jobs/listing/{job.get('slug')}",
             "source": "stripe",
+            "title": job.get("title"),
+            "location": ", ".join(job.get("locations", [])),
+            "team": job.get("team"),
+            "url": f"https://stripe.com/jobs/{job.get('slug')}",
         })
 
     return jobs

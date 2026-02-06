@@ -1,5 +1,8 @@
 - name: stripe
-  url: https://stripe.com/jobs/search
+  url: https://stripe.com/jobs/search/api
   ingestion:
     mode: dynamic
-    strategy: network_json
+    strategy: http_json
+    extractor: stripe
+    params:
+      limit: 100

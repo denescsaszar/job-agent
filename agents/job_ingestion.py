@@ -10,6 +10,8 @@ from ingestion.dynamic.network_json import NetworkJsonIngestionStrategy
 from utils.job_normalizer import normalize_job
 from utils.job_store import load_jobs, save_jobs, upsert_jobs
 
+from ingestion.dynamic.http_json import HttpJsonIngestionStrategy
+
 
 CONFIG_PATH = Path("config/sources.yaml")
 
@@ -18,6 +20,7 @@ static_ingestor = StaticIngestionStrategy()
 dynamic_dom_ingestor = PlaywrightIngestionStrategy()
 client_state_ingestor = ClientStateJsonIngestionStrategy()
 network_json_ingestor = NetworkJsonIngestionStrategy()
+http_json_ingestor = HttpJsonIngestionStrategy()
 
 
 def load_sources():
@@ -49,9 +52,11 @@ def ingest_source(source: dict) -> list[dict]:
         raw_jobs = client_state_ingestor.fetch(source)
         print(f"[{source_id}] Found {len(raw_jobs)} jobs via client-state JSON")
         return raw_jobs
+    elif mode == "dynamic" and strategy == "http_json":
+        return http_json_ingestor.fetch(source)
 
     else:
-        html = static_ingestor.fetch(source)
+      html = static_ingestor.fetch(source)
 
     # ------------------------------------------------------------
     # HTML PARSING (INSPECTION MODE)
