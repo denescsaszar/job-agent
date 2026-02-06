@@ -68,6 +68,11 @@ class NetworkJsonIngestionStrategy(IngestionStrategy):
         Decide whether a network response is the job API.
         Matching rules are config-driven.
         """
+            # TEMP DEBUG: log all XHR / fetch URLs
+        if response.request.resource_type in ("xhr", "fetch"):
+          print(f"[NET] {response.request.method} {response.url}")
+
+        return False
         url_contains = source.get("ingestion", {}).get("response_url_contains")
 
         if not url_contains:
